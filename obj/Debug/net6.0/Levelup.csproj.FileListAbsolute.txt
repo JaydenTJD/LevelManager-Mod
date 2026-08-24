@@ -125,3 +125,4 @@ C:\Users\jayde\source\repos\Levelup\obj\Debug\net6.0\Levelup.dll
 C:\Users\jayde\source\repos\Levelup\obj\Debug\net6.0\refint\Levelup.dll
 C:\Users\jayde\source\repos\Levelup\obj\Debug\net6.0\Levelup.pdb
 C:\Users\jayde\source\repos\Levelup\obj\Debug\net6.0\ref\Levelup.dll
+C:\Users\jayde\source\repos\Levelup\obj\Debug\net6.0\Levelup.sourcelink.json

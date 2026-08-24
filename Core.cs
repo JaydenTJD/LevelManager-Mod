@@ -11,6 +11,8 @@ namespace Levelup
     public class Core : MelonMod
     {
         Il2CppNcp.Game.ILevelManager lm;
+        List<int> min = Enumerable.Repeat(100000000, 999).ToList();
+        List<int> max = Enumerable.Repeat(0, 999).ToList();
         private Rect window = new(10, 10, 150, 50);
         private int PopulateLM()
         {
@@ -53,15 +55,24 @@ namespace Levelup
         {
             LoggerInstance.Msg("Initialized.");
         }
+        public override void OnDeinitializeMelon()
+        {
+            string dirPath = Path.Combine(Directory.GetCurrentDirectory(), "Mods/Data");
+            string filePath = Path.Combine(dirPath, "min.txt");
+            File.WriteAllText(filePath, string.Join(",", min));
+            filePath = Path.Combine(dirPath, "max.txt");
+            File.WriteAllText(filePath, string.Join(",", max));
+            Melon<Core>.Logger.Msg("Succesfully wrote min/max");
+        }
         public override void OnGUI()
         {
-            window = GUI.Window(5, window, (GUI.WindowFunction)DrawWindow, "Levelup Window");
+            window = GUI.Window(85721, window, (GUI.WindowFunction)DrawWindow, "Levelup Window");
         }
         private void DrawWindow(int id)
         {
             GUI.DragWindow(new Rect(0, 0, 150, 20));
 
-            if (GUI.Button(new Rect(0, 20, 150, 30), "Start..."))
+            if (Button(new Rect(0, 20, 150, 30), "Start..."))
             {
                 int seed = PopulateLM();
                 string dirPath = Path.Combine(Directory.GetCurrentDirectory(), "Mods/Data");
@@ -77,17 +88,41 @@ namespace Levelup
                     {
                         if (!isFirst)
                         {
-                            writer.Write(", ");
-                        } else
+                            writer.Write(",");
+                        }
+                        else
                         {
                             isFirst = false;
                         }
-                        writer.Write(GetCurrentNumber());
+                        int num = GetCurrentNumber();
+                        writer.Write(num);
+                        if (min[i] > num)
+                        {
+                            min[i] = num;
+                        }
+                        if (max[i] < num)
+                        {
+                            max[i] = num;
+                        }
                         lm.ForceNextLevel();
                     }
                 }
                 Melon<Core>.Logger.Msg("Success!!!");
             }
+        }
+        private static bool Button(Rect rect, string label)
+        {
+            bool clicked = false;
+            if (Event.current.type == EventType.MouseDown && Event.current.button == 0)
+            {
+                if (rect.Contains(Event.current.mousePosition))
+                {
+                    clicked = true;
+                    Event.current.Use();
+                }
+            }
+            GUI.Button(rect, label);
+            return clicked;
         }
     }
 }
