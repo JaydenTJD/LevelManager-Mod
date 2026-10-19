@@ -15,11 +15,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\jayde\\source\\repos\\Levelup\\Levelup.csproj",
-      "projectName": "Levelup",
-      "projectPath": "C:\\Users\\jayde\\source\\repos\\Levelup\\Levelup.csproj",
+      "projectUniqueName": "C:\\Users\\jayde\\source\\repos\\Level Manager\\Level Manager.csproj",
+      "projectName": "Level_Manager",
+      "projectPath": "C:\\Users\\jayde\\source\\repos\\Level Manager\\Level Manager.csproj",
       "packagesPath": "C:\\Users\\jayde\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\jayde\\source\\repos\\Levelup\\obj\\",
+      "outputPath": "C:\\Users\\jayde\\source\\repos\\Level Manager\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",

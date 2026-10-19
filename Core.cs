@@ -1,128 +1,73 @@
 ﻿using Il2Cpp;
+using Il2CppNcp.Game;
 using MelonLoader;
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using UniverseLib;
+using UniverseLib.UI;
+using UniverseLib.UI.Models;
+using UniverseLib.UI.Panels;
+using UniverseLib.Utility;
 
-[assembly: MelonInfo(typeof(Levelup.Core), "Levelup", "1.0.0", "Jayden", null)]
+[assembly: MelonInfo(typeof(Level_Manager.Core), "Level Manager", "2.0.0", "Jayden", null)]
 [assembly: MelonGame("Notional Games", "Beltmatic")]
 
-namespace Levelup
+namespace Level_Manager
 {
     public class Core : MelonMod
     {
-        Il2CppNcp.Game.ILevelManager lm;
-        List<int> min = Enumerable.Repeat(100000000, 999).ToList();
-        List<int> max = Enumerable.Repeat(0, 999).ToList();
-        private Rect window = new(10, 10, 150, 50);
-        private int PopulateLM()
-        {
-            Melon<Core>.Logger.Msg("Attempting to populate lm instance");
-            GameObject dummy = new();
-            UnityEngine.Object.DontDestroyOnLoad(dummy);
-            Scene ddolScene = dummy.scene;
-            UnityEngine.Object.Destroy(dummy);
-            Melon<Core>.Logger.Msg("Obtained a reference to the ddol scene");
-            GameObject gameManagerGO = null;
-            var rootObjects = ddolScene.GetRootGameObjects();
-            foreach (var GO in rootObjects)
-            {
-                if (GO != null && GO.name == "GameManager")
-                {
-                    gameManagerGO = GO;
-                    break;
-                }
-            }
-            Melon<Core>.Logger.Msg("Obtained a reference to the GameManager");
-            var gameManagerScript = gameManagerGO.GetComponent<GameManager>();
-            Melon<Core>.Logger.Msg("Obtained a reference to the GM script");
-            var simulationInstance = gameManagerScript.RealSimulation;
-            Melon<Core>.Logger.Msg("Obtained a reference to the Simulation");
-            lm = simulationInstance.LevelManager;
-            Melon<Core>.Logger.Msg("Populated Succesfully");
-            return simulationInstance.Seed;
-        }
-        private int GetCurrentNumber()
-        {
-            if (lm == null)
-            {
-                return 1;
-            } else
-            {
-                return lm.CurrentNumber;
-            }
-        }
+        public static UIBase UI { get; private set; }
+        public static InputPanel LevelField { get; private set; }
         public override void OnInitializeMelon()
         {
-            LoggerInstance.Msg("Initialized.");
+            Universe.Init(1f, OnUniverseInit, LogHandler, new UniverseLib.Config.UniverseLibConfig());
         }
-        public override void OnDeinitializeMelon()
-        {
-            string dirPath = Path.Combine(Directory.GetCurrentDirectory(), "Mods/Data");
-            string filePath = Path.Combine(dirPath, "min.txt");
-            File.WriteAllText(filePath, string.Join(",", min));
-            filePath = Path.Combine(dirPath, "max.txt");
-            File.WriteAllText(filePath, string.Join(",", max));
-            Melon<Core>.Logger.Msg("Succesfully wrote min/max");
-        }
-        public override void OnGUI()
-        {
-            window = GUI.Window(85721, window, (GUI.WindowFunction)DrawWindow, "Levelup Window");
-        }
-        private void DrawWindow(int id)
-        {
-            GUI.DragWindow(new Rect(0, 0, 150, 20));
 
-            if (Button(new Rect(0, 20, 150, 30), "Start..."))
+        private void OnUniverseInit()
+        {
+            UI = UniversalUI.RegisterUI("com.jayden.levelmanager", UpdateUIBehavior);
+            LevelField = new(UI);
+            LevelField.SetActive(true);
+        }
+
+        private void UpdateUIBehavior() { }
+
+        public override void OnUpdate()
+        {
+            if (UnityEngine.InputSystem.Keyboard.current.f5Key.wasPressedThisFrame)
             {
-                int seed = PopulateLM();
-                string dirPath = Path.Combine(Directory.GetCurrentDirectory(), "Mods/Data");
-                string filePath = Path.Combine(dirPath, $"{seed}.txt");
-                if (!Directory.Exists(dirPath))
-                {
-                    Directory.CreateDirectory(dirPath);
-                }
-                using (StreamWriter writer = new(filePath, append: false))
-                {
-                    bool isFirst = true;
-                    for (int i = 0; i < 999; i++)
-                    {
-                        if (!isFirst)
-                        {
-                            writer.Write(",");
-                        }
-                        else
-                        {
-                            isFirst = false;
-                        }
-                        int num = GetCurrentNumber();
-                        writer.Write(num);
-                        if (min[i] > num)
-                        {
-                            min[i] = num;
-                        }
-                        if (max[i] < num)
-                        {
-                            max[i] = num;
-                        }
-                        lm.ForceNextLevel();
-                    }
-                }
-                Melon<Core>.Logger.Msg("Success!!!");
+                LevelField.SetActive(!LevelField.Enabled);
             }
         }
-        private static bool Button(Rect rect, string label)
+
+        private void LogHandler(string message, LogType logtype)
         {
-            bool clicked = false;
-            if (Event.current.type == EventType.MouseDown && Event.current.button == 0)
+            LoggerInstance.Msg($"[{logtype}] {message}");
+        }
+    }
+
+    public class InputPanel(UIBase owner) : PanelBase(owner)
+    {
+        private InputFieldRef textInput;
+
+        public override string Name => "Level Manager";
+        public override int MinWidth => 150;
+        public override int MinHeight => 80;
+        public override Vector2 DefaultAnchorMin => new(0, 1);
+        public override Vector2 DefaultAnchorMax => new(0, 1);
+        public override bool CanDragAndResize => true;
+
+        protected override void ConstructPanelContent()
+        {
+            textInput = UIFactory.CreateInputField(ContentRoot, "LevelInputField", GameManager.Instance.AnySimulation.LevelManager.Level.ToString());
+            UIFactory.SetLayoutElement(textInput.UIRoot, minWidth: 130, minHeight: 30);
+
+            textInput.Component.GetOnEndEdit().AddListener(val =>
             {
-                if (rect.Contains(Event.current.mousePosition))
+                if (int.TryParse(val, out int level) && level > 0 && level <= 1000)
                 {
-                    clicked = true;
-                    Event.current.Use();
+                    GameManager.Instance.AnySimulation.LevelManager.Cast<LevelManager>().SetLevel(level);
                 }
-            }
-            GUI.Button(rect, label);
-            return clicked;
+            });
         }
     }
 }
